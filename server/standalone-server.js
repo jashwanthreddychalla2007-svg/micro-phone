@@ -27,8 +27,17 @@ function serveStatic(request, response) {
 
   fs.readFile(filePath, (error, content) => {
     if (error) {
-      response.writeHead(404);
-      response.end("Not found");
+      const fallbackPath = path.join(PUBLIC_DIR, "index.html");
+      fs.readFile(fallbackPath, (fallbackError, fallbackContent) => {
+        if (fallbackError) {
+          response.writeHead(404);
+          response.end("Not found");
+          return;
+        }
+
+        response.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+        response.end(fallbackContent);
+      });
       return;
     }
 
