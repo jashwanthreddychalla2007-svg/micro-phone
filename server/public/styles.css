@@ -272,6 +272,10 @@ input:focus {
   margin-top: 16px;
 }
 
+.test-actions {
+  grid-template-columns: 1fr 1fr;
+}
+
 button {
   min-height: 52px;
   border: 0;
