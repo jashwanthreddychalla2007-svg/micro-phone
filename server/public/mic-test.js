@@ -6,6 +6,8 @@ const testMessage = document.getElementById("testMessage");
 const testStatusPill = document.getElementById("testStatusPill");
 const testLevelText = document.getElementById("testLevelText");
 const testBars = [...document.querySelectorAll(".test-bar")];
+const gainInput = document.getElementById("gainInput");
+const gainValue = document.getElementById("gainValue");
 
 let socket;
 let stream;
@@ -15,6 +17,7 @@ let processor;
 let heartbeatTimer;
 let carry = [];
 let micOn = true;
+let wantedStop = false;
 
 function urlForDevice() {
   const protocol = location.protocol === "https:" ? "wss" : "ws";
@@ -38,6 +41,10 @@ function showLevel(level) {
     bar.classList.toggle("peak", active && index >= 10);
   });
   testLevelText.textContent = level < 0.08 ? "Quiet" : level < 0.45 ? "Live" : "Loud";
+}
+
+function currentGain() {
+  return Number(gainInput.value || 1);
 }
 
 function heartbeat() {
@@ -68,8 +75,9 @@ function resample16k(input, inputRate) {
 function sendPcm(floatSamples) {
   if (!socket || socket.readyState !== WebSocket.OPEN || !micOn) return;
   const pcm = new Int16Array(floatSamples.length);
+  const gain = currentGain();
   for (let i = 0; i < floatSamples.length; i += 1) {
-    const sample = Math.max(-1, Math.min(1, floatSamples[i]));
+    const sample = Math.max(-1, Math.min(1, floatSamples[i] * gain));
     pcm[i] = sample < 0 ? sample * 32768 : sample * 32767;
   }
   socket.send(pcm.buffer);
@@ -83,26 +91,39 @@ async function start() {
 
   socket = new WebSocket(urlForDevice());
   socket.binaryType = "arraybuffer";
+  wantedStop = false;
   testMessage.textContent = "Connecting to Render as laptop device...";
 
   socket.addEventListener("open", async () => {
-    heartbeat();
-    heartbeatTimer = setInterval(heartbeat, 5000);
-    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    audioContext = new AudioContext();
-    source = audioContext.createMediaStreamSource(stream);
-    processor = audioContext.createScriptProcessor(2048, 1, 1);
-    processor.onaudioprocess = (event) => {
-      const input = event.inputBuffer.getChannelData(0);
-      let total = 0;
-      for (let i = 0; i < input.length; i += 1) total += Math.abs(input[i]);
-      showLevel(Math.min(1, (total / input.length) * 3.5));
-      sendPcm(resample16k(input, audioContext.sampleRate));
-    };
-    source.connect(processor);
-    processor.connect(audioContext.destination);
-    setStatus(true);
-    testMessage.textContent = "Laptop mic is streaming. Open the main dashboard in another tab.";
+    try {
+      heartbeat();
+      heartbeatTimer = setInterval(heartbeat, 5000);
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: true
+        }
+      });
+      audioContext = new AudioContext();
+      source = audioContext.createMediaStreamSource(stream);
+      processor = audioContext.createScriptProcessor(2048, 1, 1);
+      processor.onaudioprocess = (event) => {
+        const input = event.inputBuffer.getChannelData(0);
+        let total = 0;
+        for (let i = 0; i < input.length; i += 1) total += Math.abs(input[i] * currentGain());
+        showLevel(Math.min(1, (total / input.length) * 3.5));
+        sendPcm(resample16k(input, audioContext.sampleRate));
+      };
+      source.connect(processor);
+      processor.connect(audioContext.destination);
+      setStatus(true);
+      testMessage.textContent = "Mic is streaming as the device. Keep this page open.";
+    } catch (error) {
+      testMessage.textContent = `Microphone permission failed: ${error.message}`;
+      stop();
+    }
   });
 
   socket.addEventListener("message", (event) => {
@@ -115,11 +136,19 @@ async function start() {
   });
 
   socket.addEventListener("error", () => {
-    testMessage.textContent = "Connection failed. Check DEVICE_TOKEN.";
+    testMessage.textContent = "Connection failed. Check DEVICE_TOKEN and refresh the page.";
+  });
+
+  socket.addEventListener("close", () => {
+    if (!wantedStop) {
+      setStatus(false);
+      testMessage.textContent = "Device connection closed. If the dashboard is open, refresh this page and start again.";
+    }
   });
 }
 
 function stop() {
+  wantedStop = true;
   clearInterval(heartbeatTimer);
   if (processor) processor.disconnect();
   if (source) source.disconnect();
@@ -145,9 +174,13 @@ toggleDeviceTokenBtn.addEventListener("click", () => {
   toggleDeviceTokenBtn.setAttribute("aria-label", visible ? "Hide device token" : "Show device token");
 });
 
+gainInput.addEventListener("input", () => {
+  gainValue.textContent = `${currentGain()}x`;
+});
+
 startTestBtn.addEventListener("click", start);
 stopTestBtn.addEventListener("click", stop);
 setStatus(false);
 showLevel(0);
 testLevelText.textContent = "Idle";
-
+gainValue.textContent = `${currentGain()}x`;

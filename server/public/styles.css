@@ -276,6 +276,21 @@ input:focus {
   grid-template-columns: 1fr 1fr;
 }
 
+.gain-control {
+  margin-top: 16px;
+}
+
+.gain-control input {
+  min-height: 34px;
+  padding: 0;
+  accent-color: var(--green);
+}
+
+.gain-control strong {
+  color: var(--ink);
+  font-size: 18px;
+}
+
 button {
   min-height: 52px;
   border: 0;
