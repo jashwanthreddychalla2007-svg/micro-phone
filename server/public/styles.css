@@ -211,6 +211,60 @@ input:focus {
   box-shadow: 0 0 0 4px rgba(35, 107, 142, 0.14);
 }
 
+.token-input {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 52px;
+  gap: 8px;
+}
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  min-height: 50px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--blue);
+  box-shadow: none;
+}
+
+.icon-button:hover:not(:disabled) {
+  background: #f4fafc;
+  box-shadow: none;
+}
+
+.eye-icon {
+  position: relative;
+  width: 24px;
+  height: 15px;
+  border: 2px solid currentColor;
+  border-radius: 999px 999px 999px 999px / 75% 75% 75% 75%;
+}
+
+.eye-icon::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+}
+
+.icon-button.is-hidden .eye-icon::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -6px;
+  width: 2px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--red);
+  transform: rotate(45deg);
+}
+
 .actions {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

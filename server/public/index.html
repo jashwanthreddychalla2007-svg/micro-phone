@@ -40,7 +40,12 @@
           <div class="control-panel">
             <label class="token">
               <span>Dashboard token</span>
-              <input id="tokenInput" type="password" value="change-this-dashboard-token" autocomplete="off">
+              <span class="token-input">
+                <input id="tokenInput" type="password" value="change-this-dashboard-token" autocomplete="off">
+                <button id="toggleTokenBtn" class="icon-button" type="button" aria-label="Show dashboard token" aria-pressed="false">
+                  <span class="eye-icon" aria-hidden="true"></span>
+                </button>
+              </span>
             </label>
 
             <div class="actions">

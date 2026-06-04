@@ -3,6 +3,7 @@ const micState = document.getElementById("micState");
 const lastSeen = document.getElementById("lastSeen");
 const listenerState = document.getElementById("listenerState");
 const tokenInput = document.getElementById("tokenInput");
+const toggleTokenBtn = document.getElementById("toggleTokenBtn");
 const connectBtn = document.getElementById("connectBtn");
 const micOnBtn = document.getElementById("micOnBtn");
 const micOffBtn = document.getElementById("micOffBtn");
@@ -92,6 +93,13 @@ function renderLevel(level) {
 
 function resetLevel() {
   renderLevel(0);
+}
+
+function renderTokenVisibility() {
+  const isVisible = tokenInput.type === "text";
+  toggleTokenBtn.classList.toggle("is-hidden", !isVisible);
+  toggleTokenBtn.setAttribute("aria-label", isVisible ? "Hide dashboard token" : "Show dashboard token");
+  toggleTokenBtn.setAttribute("aria-pressed", String(isVisible));
 }
 
 async function ensureAudioContext() {
@@ -194,6 +202,12 @@ listenBtn.addEventListener("click", async () => {
   send({ type: "listen", enabled: !listening });
 });
 
+toggleTokenBtn.addEventListener("click", () => {
+  tokenInput.type = tokenInput.type === "password" ? "text" : "password";
+  renderTokenVisibility();
+});
+
 setInterval(renderLastSeen, 1000);
 resetLevel();
 setDeviceClass(false);
+renderTokenVisibility();
