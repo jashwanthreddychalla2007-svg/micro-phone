@@ -1,0 +1,15 @@
+{
+  "name": "esp32-audio-monitor",
+  "version": "1.0.0",
+  "description": "ESP32 live audio monitor dashboard and WebSocket relay.",
+  "main": "server/standalone-server.js",
+  "scripts": {
+    "start": "node server/standalone-server.js",
+    "verify": "node --check server/standalone-server.js && node --check server/public/app.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}
+
