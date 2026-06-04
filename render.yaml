@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: esp32-audio-monitor
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: ""
+    startCommand: node standalone-server.js
+    envVars:
+      - key: DASHBOARD_TOKEN
+        generateValue: true
+      - key: DEVICE_TOKEN
+        generateValue: true
+

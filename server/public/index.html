@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kitchen Audio Dashboard</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="dashboard" aria-label="Kitchen audio monitor dashboard">
+        <header class="hero">
+          <div class="hero-copy">
+            <p class="eyebrow">Restaurant Kitchen</p>
+            <h1>Live Audio Monitor</h1>
+            <p id="message" class="message">Connect to the dashboard server to begin.</p>
+          </div>
+          <div class="status-card" aria-live="polite">
+            <span id="statusPill" class="pill offline"><span class="status-dot"></span>OFFLINE</span>
+            <span class="status-label">Device status</span>
+          </div>
+        </header>
+
+        <dl class="stats" aria-label="Device summary">
+          <div class="stat-tile">
+            <dt>Microphone</dt>
+            <dd id="micState">OFF</dd>
+          </div>
+          <div class="stat-tile">
+            <dt>Last seen</dt>
+            <dd id="lastSeen">Never</dd>
+          </div>
+          <div class="stat-tile">
+            <dt>Listener</dt>
+            <dd id="listenerState">Disconnected</dd>
+          </div>
+        </dl>
+
+        <section class="control-grid" aria-label="Audio controls">
+          <div class="control-panel">
+            <label class="token">
+              <span>Dashboard token</span>
+              <input id="tokenInput" type="password" value="change-this-dashboard-token" autocomplete="off">
+            </label>
+
+            <div class="actions">
+              <button id="connectBtn" class="primary-action" type="button">Connect</button>
+              <button id="micOnBtn" class="success-action" type="button" disabled>MIC ON</button>
+              <button id="micOffBtn" class="danger-action" type="button" disabled>MIC OFF</button>
+              <button id="listenBtn" class="listen-action" type="button" disabled>LISTEN LIVE</button>
+            </div>
+          </div>
+
+          <aside class="audio-panel" aria-label="Live audio level">
+            <div class="audio-head">
+              <span>Live level</span>
+              <strong id="levelText">Idle</strong>
+            </div>
+            <div class="meter" aria-hidden="true">
+              <span class="bar"></span>
+              <span class="bar"></span>
+              <span class="bar"></span>
+              <span class="bar"></span>
+              <span class="bar"></span>
+              <span class="bar"></span>
+              <span class="bar"></span>
+              <span class="bar"></span>
+              <span class="bar"></span>
+              <span class="bar"></span>
+              <span class="bar"></span>
+              <span class="bar"></span>
+            </div>
+          </aside>
+        </section>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "name": "esp32-audio-monitor-server",
+  "version": "1.0.0",
+  "description": "WebSocket server and dashboard for ESP32 live audio monitor.",
+  "main": "standalone-server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node standalone-server.js",
+    "simulate:device": "node tools/fake-device-standalone.js",
+    "verify": "node --check standalone-server.js && node --check public/app.js && node --check tools/fake-device-standalone.js && node --check tools/verify-flow.js && node --check server.js && node --check tools/fake-device.js",
+    "verify:flow": "node tools/verify-flow.js"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}
