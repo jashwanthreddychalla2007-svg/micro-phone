@@ -1,0 +1,17 @@
+plugins {
+    id "com.android.application"
+}
+
+android {
+    namespace "com.esp32audiomonitor.legalmicstreamer"
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.esp32audiomonitor.legalmicstreamer"
+        minSdk 23
+        targetSdk 35
+        versionCode 1
+        versionName "1.0"
+    }
+}
+

@@ -51,6 +51,8 @@ esp32-audio-monitor/
   deploy/
     install-vps.sh
     check-vps.sh
+  android-app/
+    app/
   firmware/
     esp32_audio_monitor.ino
 ```
@@ -73,6 +75,8 @@ For physical ESP32 assembly and first hardware testing, follow `real-device-guid
 For remote phone access over the internet, follow `listen-from-anywhere.md`.
 
 For free Render hosting, follow `render-deploy-guide.md`.
+
+For the legal consent-based Android microphone app, open `android-app/` in Android Studio and build the APK.
 
 ## Quick Local Run
 
