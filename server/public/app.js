@@ -9,6 +9,8 @@ const micOnBtn = document.getElementById("micOnBtn");
 const micOffBtn = document.getElementById("micOffBtn");
 const listenBtn = document.getElementById("listenBtn");
 const restartBtn = document.getElementById("restartBtn");
+const recordBtn = document.getElementById("recordBtn");
+const downloadBtn = document.getElementById("downloadBtn");
 const message = document.getElementById("message");
 const levelText = document.getElementById("levelText");
 const meterBars = [...document.querySelectorAll(".bar")];
@@ -23,6 +25,8 @@ let audioContext;
 let nextPlayTime = 0;
 let listening = false;
 let lastSeenAt = 0;
+let recording = false;
+let recordedChunks = [];
 
 function setMessage(text) {
   message.textContent = text;
@@ -33,6 +37,8 @@ function setConnectedControls(enabled) {
   micOffBtn.disabled = !enabled;
   listenBtn.disabled = !enabled;
   restartBtn.disabled = !enabled;
+  recordBtn.disabled = !enabled;
+  downloadBtn.disabled = recordedChunks.length === 0;
 }
 
 function setDeviceClass(online) {
@@ -163,6 +169,11 @@ function playPcmFrame(arrayBuffer) {
   if (!audioContext || !listening) return;
 
   const samples = new Int16Array(arrayBuffer);
+  if (recording) {
+    recordedChunks.push(new Int16Array(samples));
+    downloadBtn.disabled = true;
+  }
+
   const audioBuffer = audioContext.createBuffer(1, samples.length, 16000);
   const channel = audioBuffer.getChannelData(0);
   let total = 0;
@@ -225,8 +236,10 @@ connectBtn.addEventListener("click", () => {
     setDeviceClass(false);
     listenerState.textContent = "Disconnected";
     listening = false;
+    recording = false;
     setListeningClass(false);
     listenBtn.textContent = "LISTEN LIVE";
+    recordBtn.textContent = "START RECORD";
     resetLevel();
     setMessage("Dashboard disconnected.");
   });
@@ -249,6 +262,76 @@ restartBtn.addEventListener("click", () => {
     send({ type: "restart" });
     setMessage("Restart command sent to ESP32.");
   }
+});
+
+function wavBlobFromChunks(chunks, sampleRate) {
+  const sampleCount = chunks.reduce((total, chunk) => total + chunk.length, 0);
+  const dataSize = sampleCount * 2;
+  const buffer = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(buffer);
+  let offset = 0;
+
+  function writeString(value) {
+    for (let i = 0; i < value.length; i += 1) {
+      view.setUint8(offset, value.charCodeAt(i));
+      offset += 1;
+    }
+  }
+
+  writeString("RIFF");
+  view.setUint32(offset, 36 + dataSize, true); offset += 4;
+  writeString("WAVE");
+  writeString("fmt ");
+  view.setUint32(offset, 16, true); offset += 4;
+  view.setUint16(offset, 1, true); offset += 2;
+  view.setUint16(offset, 1, true); offset += 2;
+  view.setUint32(offset, sampleRate, true); offset += 4;
+  view.setUint32(offset, sampleRate * 2, true); offset += 4;
+  view.setUint16(offset, 2, true); offset += 2;
+  view.setUint16(offset, 16, true); offset += 2;
+  writeString("data");
+  view.setUint32(offset, dataSize, true); offset += 4;
+
+  for (const chunk of chunks) {
+    for (let i = 0; i < chunk.length; i += 1) {
+      view.setInt16(offset, chunk[i], true);
+      offset += 2;
+    }
+  }
+
+  return new Blob([buffer], { type: "audio/wav" });
+}
+
+recordBtn.addEventListener("click", () => {
+  if (!listening) {
+    setMessage("Press LISTEN LIVE before recording.");
+    return;
+  }
+
+  recording = !recording;
+  recordBtn.textContent = recording ? "STOP RECORD" : "START RECORD";
+
+  if (recording) {
+    recordedChunks = [];
+    downloadBtn.disabled = true;
+    setMessage("Recording started in this browser.");
+  } else {
+    downloadBtn.disabled = recordedChunks.length === 0;
+    setMessage("Recording stopped. Download is ready.");
+  }
+});
+
+downloadBtn.addEventListener("click", () => {
+  if (recordedChunks.length === 0) return;
+
+  const blob = wavBlobFromChunks(recordedChunks, 16000);
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  link.href = url;
+  link.download = `kitchen-audio-${stamp}.wav`;
+  link.click();
+  URL.revokeObjectURL(url);
 });
 
 listenBtn.addEventListener("click", async () => {
