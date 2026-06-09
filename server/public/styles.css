@@ -1,20 +1,22 @@
 :root {
   color-scheme: light;
-  --bg: #f4f0e8;
-  --surface: #fffdf8;
-  --surface-2: #f7faf7;
-  --ink: #17201c;
-  --muted: #65706b;
-  --line: #dce2dc;
-  --shadow: rgba(34, 45, 38, 0.16);
-  --blue: #236b8e;
-  --blue-dark: #164d68;
-  --green: #18865a;
+  --bg: #eef2f5;
+  --surface: #ffffff;
+  --surface-2: #f7fafb;
+  --ink: #14201d;
+  --muted: #66737d;
+  --line: #dce4ea;
+  --shadow: rgba(21, 31, 39, 0.14);
+  --blue: #176b91;
+  --blue-dark: #0e4f6c;
+  --green: #168b5c;
   --green-soft: #e8f6ef;
   --red: #b7433d;
   --red-soft: #fae9e7;
   --amber: #b7791f;
   --amber-soft: #fff4da;
+  --violet: #5967c8;
+  --meter-bg: #12323f;
 }
 
 * {
@@ -30,8 +32,9 @@ body {
   min-height: 100vh;
   font-family: Inter, "Segoe UI", Arial, Helvetica, sans-serif;
   background:
-    linear-gradient(180deg, rgba(255, 253, 248, 0.92), rgba(244, 240, 232, 0.96)),
-    repeating-linear-gradient(90deg, rgba(23, 32, 28, 0.035) 0, rgba(23, 32, 28, 0.035) 1px, transparent 1px, transparent 72px);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(238, 242, 245, 0.98)),
+    radial-gradient(circle at top left, rgba(23, 107, 145, 0.08), transparent 34%),
+    repeating-linear-gradient(90deg, rgba(20, 32, 29, 0.025) 0, rgba(20, 32, 29, 0.025) 1px, transparent 1px, transparent 78px);
   color: var(--ink);
 }
 
@@ -48,7 +51,7 @@ input {
 }
 
 .dashboard {
-  width: min(980px, 100%);
+  width: min(1120px, 100%);
   display: grid;
   gap: 16px;
 }
@@ -60,7 +63,7 @@ input {
 .stat-tile {
   background: var(--surface);
   border: 1px solid rgba(114, 128, 119, 0.24);
-  box-shadow: 0 22px 70px var(--shadow);
+  box-shadow: 0 24px 70px var(--shadow);
 }
 
 .hero {
@@ -70,6 +73,16 @@ input {
   align-items: stretch;
   border-radius: 8px;
   padding: 26px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 6px;
+  background: linear-gradient(90deg, var(--blue), var(--green), var(--amber));
 }
 
 .hero-copy {
@@ -78,7 +91,7 @@ input {
 
 .eyebrow {
   margin: 0 0 8px;
-  color: var(--blue);
+  color: var(--violet);
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 0;
@@ -98,6 +111,7 @@ h1 {
   color: var(--muted);
   font-size: 16px;
   line-height: 1.5;
+  max-width: 720px;
 }
 
 .status-card {
@@ -109,6 +123,7 @@ h1 {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface-2);
+  transition: background-color 160ms ease, border-color 160ms ease;
 }
 
 .status-label {
@@ -148,15 +163,21 @@ h1 {
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
   margin: 0;
 }
 
 .stat-tile {
   min-height: 112px;
   border-radius: 8px;
-  padding: 18px;
+  padding: 16px;
+  transition: transform 160ms ease, border-color 160ms ease;
+}
+
+.stat-tile:hover {
+  transform: translateY(-1px);
+  border-color: rgba(23, 107, 145, 0.28);
 }
 
 dt {
@@ -169,7 +190,7 @@ dt {
 dd {
   margin: 12px 0 0;
   color: var(--ink);
-  font-size: clamp(19px, 3vw, 30px);
+  font-size: clamp(18px, 2.7vw, 28px);
   font-weight: 900;
   line-height: 1;
   overflow-wrap: anywhere;
@@ -177,7 +198,7 @@ dd {
 
 .control-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.7fr);
   gap: 16px;
 }
 
@@ -211,6 +232,7 @@ dd {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 12px;
+  background: var(--surface-2);
 }
 
 .recording-row a {
@@ -222,6 +244,11 @@ dd {
 .recording-meta {
   color: var(--muted);
   font-size: 13px;
+}
+
+.recordings-list p {
+  margin: 0;
+  color: var(--muted);
 }
 
 .token {
@@ -242,6 +269,7 @@ input {
   padding: 0 14px;
   font-size: 16px;
   outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
 input:focus {
@@ -305,28 +333,9 @@ input:focus {
 
 .actions {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
   gap: 10px;
   margin-top: 16px;
-}
-
-.test-actions {
-  grid-template-columns: 1fr 1fr;
-}
-
-.gain-control {
-  margin-top: 16px;
-}
-
-.gain-control input {
-  min-height: 34px;
-  padding: 0;
-  accent-color: var(--green);
-}
-
-.gain-control strong {
-  color: var(--ink);
-  font-size: 18px;
 }
 
 button {
@@ -339,6 +348,7 @@ button {
   letter-spacing: 0;
   cursor: pointer;
   transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+  white-space: nowrap;
 }
 
 button:hover:not(:disabled) {
@@ -359,6 +369,11 @@ button:disabled {
 .primary-action,
 .listen-action {
   background: var(--blue);
+}
+
+.primary-action:hover:not(:disabled),
+.listen-action:hover:not(:disabled) {
+  background: var(--blue-dark);
 }
 
 .success-action {
@@ -402,7 +417,7 @@ button:disabled {
   min-height: 126px;
   padding: 12px;
   border-radius: 8px;
-  background: #15211d;
+  background: var(--meter-bg);
   overflow: hidden;
 }
 
@@ -433,10 +448,12 @@ body.is-listening .listen-action {
 
 body.device-online .status-card {
   background: var(--green-soft);
+  border-color: rgba(22, 139, 92, 0.28);
 }
 
 body.device-offline .status-card {
   background: var(--red-soft);
+  border-color: rgba(188, 68, 63, 0.28);
 }
 
 @media (max-width: 780px) {
@@ -446,9 +463,9 @@ body.device-offline .status-card {
   }
 
   .hero,
-  .stats,
   .control-grid,
-  .actions {
+  .actions,
+  .recording-row {
     grid-template-columns: 1fr;
   }
 
