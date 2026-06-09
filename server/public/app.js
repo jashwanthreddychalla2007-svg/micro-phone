@@ -15,6 +15,8 @@ const message = document.getElementById("message");
 const levelText = document.getElementById("levelText");
 const meterBars = [...document.querySelectorAll(".bar")];
 const wifiSignal = document.getElementById("wifiSignal");
+const wifiQuality = document.getElementById("wifiQuality");
+const deviceTemp = document.getElementById("deviceTemp");
 const uptimeState = document.getElementById("uptimeState");
 const reconnectState = document.getElementById("reconnectState");
 const deviceName = document.getElementById("deviceName");
@@ -98,6 +100,8 @@ function espAudioLabel(level) {
 
 function renderDeviceInfo(info) {
   wifiSignal.textContent = signalLabel(info.rssi);
+  wifiQuality.textContent = typeof info.wifiQuality === "number" ? `${info.wifiQuality}%` : "--";
+  deviceTemp.textContent = typeof info.tempC === "number" ? `${info.tempC.toFixed(1)} C` : "--";
   uptimeState.textContent = uptimeLabel(info.uptimeMs);
   reconnectState.textContent = String(info.reconnects || 0);
   deviceName.textContent = info.deviceName || "Kitchen Monitor 1";

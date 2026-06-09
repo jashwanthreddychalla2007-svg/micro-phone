@@ -19,6 +19,8 @@ let lastSeenAt = 0;
 let deviceInfo = {
   deviceName: "Kitchen Monitor 1",
   rssi: null,
+  wifiQuality: null,
+  tempC: null,
   uptimeMs: 0,
   reconnects: 0,
   audioLevel: 0
@@ -410,6 +412,8 @@ function handleDevice(socket) {
             deviceInfo = {
               deviceName: typeof data.deviceName === "string" ? data.deviceName : deviceInfo.deviceName,
               rssi: typeof data.rssi === "number" ? data.rssi : deviceInfo.rssi,
+              wifiQuality: typeof data.wifiQuality === "number" ? data.wifiQuality : deviceInfo.wifiQuality,
+              tempC: typeof data.tempC === "number" ? data.tempC : deviceInfo.tempC,
               uptimeMs: typeof data.uptimeMs === "number" ? data.uptimeMs : deviceInfo.uptimeMs,
               reconnects: typeof data.reconnects === "number" ? data.reconnects : deviceInfo.reconnects,
               audioLevel: typeof data.audioLevel === "number" ? data.audioLevel : deviceInfo.audioLevel
