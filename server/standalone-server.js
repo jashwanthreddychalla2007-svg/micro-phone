@@ -402,7 +402,11 @@ function handleDevice(socket) {
         try {
           const data = JSON.parse(payload.toString("utf8"));
           if (data.type === "heartbeat" && typeof data.micOn === "boolean") {
+            const wasMicOn = micOn;
             micOn = data.micOn;
+            if (wasMicOn && !micOn) {
+              closeRecordingSegment();
+            }
             deviceInfo = {
               deviceName: typeof data.deviceName === "string" ? data.deviceName : deviceInfo.deviceName,
               rssi: typeof data.rssi === "number" ? data.rssi : deviceInfo.rssi,
@@ -485,7 +489,11 @@ function handleDashboard(socket) {
         }
 
         if (data.type === "mic") {
+          const wasMicOn = micOn;
           micOn = data.enabled === true;
+          if (wasMicOn && !micOn) {
+            closeRecordingSegment();
+          }
           if (deviceSocket && !deviceSocket.destroyed) {
             sendText(deviceSocket, { type: "mic", enabled: micOn });
           }
