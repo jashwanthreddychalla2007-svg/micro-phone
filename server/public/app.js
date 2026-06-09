@@ -19,6 +19,9 @@ const uptimeState = document.getElementById("uptimeState");
 const reconnectState = document.getElementById("reconnectState");
 const deviceName = document.getElementById("deviceName");
 const espAudioLevel = document.getElementById("espAudioLevel");
+const refreshRecordingsBtn = document.getElementById("refreshRecordingsBtn");
+const recordingsList = document.getElementById("recordingsList");
+const backupStatus = document.getElementById("backupStatus");
 
 let socket;
 let audioContext;
@@ -39,6 +42,7 @@ function setConnectedControls(enabled) {
   restartBtn.disabled = !enabled;
   recordBtn.disabled = !enabled;
   downloadBtn.disabled = recordedChunks.length === 0;
+  refreshRecordingsBtn.disabled = !enabled;
 }
 
 function setDeviceClass(online) {
@@ -98,6 +102,50 @@ function renderDeviceInfo(info) {
   reconnectState.textContent = String(info.reconnects || 0);
   deviceName.textContent = info.deviceName || "Kitchen Monitor 1";
   espAudioLevel.textContent = espAudioLabel(info.audioLevel);
+}
+
+function formatBytes(bytes) {
+  if (!bytes) return "0 MB";
+  const mb = bytes / (1024 * 1024);
+  if (mb < 1024) return `${mb.toFixed(1)} MB`;
+  return `${(mb / 1024).toFixed(2)} GB`;
+}
+
+function formatRecordingTime(ms) {
+  return new Date(ms).toLocaleString();
+}
+
+async function loadRecordings() {
+  const token = encodeURIComponent(tokenInput.value.trim());
+  if (!token) {
+    backupStatus.textContent = "Token needed";
+    return;
+  }
+
+  backupStatus.textContent = "Loading...";
+  const response = await fetch(`/api/recordings?token=${token}`);
+  if (!response.ok) {
+    backupStatus.textContent = "Failed";
+    return;
+  }
+
+  const data = await response.json();
+  backupStatus.textContent = `${data.recordings.length} files, ${formatBytes(data.totalBytes)}`;
+
+  if (data.recordings.length === 0) {
+    recordingsList.innerHTML = "<p>No backup recordings yet. Turn MIC ON and stream audio first.</p>";
+    return;
+  }
+
+  recordingsList.innerHTML = data.recordings.map((recording) => `
+    <div class="recording-row">
+      <div>
+        <a href="${recording.downloadUrl}">${recording.name}</a>
+        <div class="recording-meta">${formatRecordingTime(recording.createdAt)} - ${formatBytes(recording.size)}</div>
+      </div>
+      <a href="${recording.downloadUrl}">Download</a>
+    </div>
+  `).join("");
 }
 
 function renderLastSeen() {
@@ -209,6 +257,7 @@ connectBtn.addEventListener("click", () => {
     setConnectedControls(true);
     setMessage("Dashboard connected.");
     blinkDevice();
+    loadRecordings();
   });
 
   socket.addEventListener("message", async (event) => {
@@ -333,6 +382,8 @@ downloadBtn.addEventListener("click", () => {
   link.click();
   URL.revokeObjectURL(url);
 });
+
+refreshRecordingsBtn.addEventListener("click", loadRecordings);
 
 listenBtn.addEventListener("click", async () => {
   await ensureAudioContext();

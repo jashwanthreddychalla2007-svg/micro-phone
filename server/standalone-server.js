@@ -8,6 +8,10 @@ const DASHBOARD_TOKEN = process.env.DASHBOARD_TOKEN || "change-this-dashboard-to
 const DEVICE_TOKEN = process.env.DEVICE_TOKEN || "change-this-device-token";
 const OFFLINE_AFTER_MS = 15000;
 const PUBLIC_DIR = path.join(__dirname, "public");
+const RECORDINGS_DIR = process.env.RECORDINGS_DIR || path.join(__dirname, "recordings");
+const RECORDING_SAMPLE_RATE = 16000;
+const RECORDING_RETENTION_MS = 24 * 60 * 60 * 1000;
+const RECORDING_SEGMENT_MS = 5 * 60 * 1000;
 
 let deviceSocket = null;
 let micOn = false;
@@ -20,9 +24,191 @@ let deviceInfo = {
   audioLevel: 0
 };
 const dashboards = new Set();
+let activeRecording = null;
+let lastRecordingCleanupAt = 0;
+
+function ensureRecordingsDir() {
+  fs.mkdirSync(RECORDINGS_DIR, { recursive: true });
+}
+
+function wavHeader(dataBytes) {
+  const header = Buffer.alloc(44);
+  header.write("RIFF", 0);
+  header.writeUInt32LE(36 + dataBytes, 4);
+  header.write("WAVE", 8);
+  header.write("fmt ", 12);
+  header.writeUInt32LE(16, 16);
+  header.writeUInt16LE(1, 20);
+  header.writeUInt16LE(1, 22);
+  header.writeUInt32LE(RECORDING_SAMPLE_RATE, 24);
+  header.writeUInt32LE(RECORDING_SAMPLE_RATE * 2, 28);
+  header.writeUInt16LE(2, 32);
+  header.writeUInt16LE(16, 34);
+  header.write("data", 36);
+  header.writeUInt32LE(dataBytes, 40);
+  return header;
+}
+
+function patchWavHeader(recording) {
+  if (!recording || !recording.filePath) return;
+
+  try {
+    const fd = fs.openSync(recording.filePath, "r+");
+    fs.writeSync(fd, wavHeader(recording.dataBytes), 0, 44, 0);
+    fs.closeSync(fd);
+  } catch {
+    // The stream may be rotating or the file may have been removed.
+  }
+}
+
+function recordingFileName(startedAt) {
+  return `kitchen-${new Date(startedAt).toISOString().replace(/[:.]/g, "-")}.wav`;
+}
+
+function startRecordingSegment() {
+  ensureRecordingsDir();
+  const startedAt = Date.now();
+  const fileName = recordingFileName(startedAt);
+  const filePath = path.join(RECORDINGS_DIR, fileName);
+  const stream = fs.createWriteStream(filePath, { flags: "wx" });
+  stream.write(wavHeader(0));
+  activeRecording = {
+    dataBytes: 0,
+    fileName,
+    filePath,
+    lastHeaderPatchAt: 0,
+    startedAt,
+    stream
+  };
+}
+
+function closeRecordingSegment() {
+  if (!activeRecording) return;
+
+  const recording = activeRecording;
+  activeRecording = null;
+  patchWavHeader(recording);
+  recording.stream.end();
+}
+
+function cleanupOldRecordings() {
+  const now = Date.now();
+  if (now - lastRecordingCleanupAt < 60 * 1000) return;
+  lastRecordingCleanupAt = now;
+  ensureRecordingsDir();
+
+  for (const file of fs.readdirSync(RECORDINGS_DIR)) {
+    if (!file.endsWith(".wav")) continue;
+    const filePath = path.join(RECORDINGS_DIR, file);
+    const stats = fs.statSync(filePath);
+    if (now - stats.mtimeMs > RECORDING_RETENTION_MS && (!activeRecording || activeRecording.fileName !== file)) {
+      fs.unlinkSync(filePath);
+    }
+  }
+}
+
+function writeRecordingFrame(payload) {
+  cleanupOldRecordings();
+
+  if (!activeRecording || Date.now() - activeRecording.startedAt > RECORDING_SEGMENT_MS) {
+    closeRecordingSegment();
+    startRecordingSegment();
+  }
+
+  activeRecording.stream.write(payload);
+  activeRecording.dataBytes += payload.length;
+
+  if (Date.now() - activeRecording.lastHeaderPatchAt > 5000) {
+    activeRecording.lastHeaderPatchAt = Date.now();
+    patchWavHeader(activeRecording);
+  }
+}
+
+function recordingsList() {
+  ensureRecordingsDir();
+  const files = fs.readdirSync(RECORDINGS_DIR)
+    .filter((file) => file.endsWith(".wav"))
+    .map((file) => {
+      const filePath = path.join(RECORDINGS_DIR, file);
+      const stats = fs.statSync(filePath);
+      return {
+        createdAt: stats.birthtimeMs,
+        downloadUrl: `/recordings/${encodeURIComponent(file)}?token=${encodeURIComponent(DASHBOARD_TOKEN)}`,
+        name: file,
+        size: stats.size
+      };
+    })
+    .sort((a, b) => b.createdAt - a.createdAt);
+
+  return {
+    retentionHours: 24,
+    totalBytes: files.reduce((sum, file) => sum + file.size, 0),
+    recordings: files
+  };
+}
+
+function sendJsonResponse(response, status, payload) {
+  response.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
+  response.end(JSON.stringify(payload));
+}
+
+function serveRecordingsApi(request, response, url) {
+  if (url.searchParams.get("token") !== DASHBOARD_TOKEN) {
+    sendJsonResponse(response, 401, { error: "Unauthorized" });
+    return true;
+  }
+
+  cleanupOldRecordings();
+  sendJsonResponse(response, 200, recordingsList());
+  return true;
+}
+
+function serveRecordingDownload(request, response, url) {
+  if (url.searchParams.get("token") !== DASHBOARD_TOKEN) {
+    response.writeHead(401);
+    response.end("Unauthorized");
+    return true;
+  }
+
+  const fileName = decodeURIComponent(url.pathname.replace("/recordings/", ""));
+  if (!/^[a-zA-Z0-9_.-]+\.wav$/.test(fileName)) {
+    response.writeHead(400);
+    response.end("Bad recording name");
+    return true;
+  }
+
+  const filePath = path.join(RECORDINGS_DIR, fileName);
+  if (!filePath.startsWith(RECORDINGS_DIR) || !fs.existsSync(filePath)) {
+    response.writeHead(404);
+    response.end("Recording not found");
+    return true;
+  }
+
+  if (activeRecording && activeRecording.fileName === fileName) {
+    patchWavHeader(activeRecording);
+  }
+
+  response.writeHead(200, {
+    "Content-Disposition": `attachment; filename="${fileName}"`,
+    "Content-Type": "audio/wav"
+  });
+  fs.createReadStream(filePath).pipe(response);
+  return true;
+}
 
 function serveStatic(request, response) {
   const url = new URL(request.url, "http://localhost");
+
+  if (url.pathname === "/api/recordings") {
+    serveRecordingsApi(request, response, url);
+    return;
+  }
+
+  if (url.pathname.startsWith("/recordings/")) {
+    serveRecordingDownload(request, response, url);
+    return;
+  }
+
   const pathname = url.pathname === "/" ? "/index.html" : url.pathname;
   const filePath = path.normalize(path.join(PUBLIC_DIR, pathname));
 
@@ -233,6 +419,7 @@ function handleDevice(socket) {
       }
 
       if (opcode === 0x2 && micOn) {
+        writeRecordingFrame(payload);
         for (const dashboard of dashboards) {
           if (dashboard.isListening && !dashboard.destroyed) {
             sendBinary(dashboard, payload);

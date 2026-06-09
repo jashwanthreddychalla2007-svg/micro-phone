@@ -56,6 +56,7 @@ input {
 .hero,
 .control-panel,
 .audio-panel,
+.recordings-panel,
 .stat-tile {
   background: var(--surface);
   border: 1px solid rgba(114, 128, 119, 0.24);
@@ -181,9 +182,46 @@ dd {
 }
 
 .control-panel,
-.audio-panel {
+.audio-panel,
+.recordings-panel {
   border-radius: 8px;
   padding: 20px;
+}
+
+.recordings-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.recording-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.recordings-list {
+  display: grid;
+  gap: 8px;
+}
+
+.recording-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.recording-row a {
+  color: var(--blue);
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.recording-meta {
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .token {
