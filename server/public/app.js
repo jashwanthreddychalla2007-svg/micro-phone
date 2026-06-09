@@ -104,7 +104,7 @@ function renderDeviceInfo(info) {
   deviceTemp.textContent = typeof info.tempC === "number" ? `${info.tempC.toFixed(1)} C` : "--";
   uptimeState.textContent = uptimeLabel(info.uptimeMs);
   reconnectState.textContent = String(info.reconnects || 0);
-  deviceName.textContent = info.deviceName || "Kitchen Monitor 1";
+  deviceName.textContent = "Audio Device";
   espAudioLevel.textContent = espAudioLabel(info.audioLevel);
 }
 
@@ -382,7 +382,7 @@ downloadBtn.addEventListener("click", () => {
   const link = document.createElement("a");
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   link.href = url;
-  link.download = `kitchen-audio-${stamp}.wav`;
+  link.download = `audio-device-${stamp}.wav`;
   link.click();
   URL.revokeObjectURL(url);
 });
