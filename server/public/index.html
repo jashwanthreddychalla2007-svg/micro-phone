@@ -34,6 +34,26 @@
             <dt>Listener</dt>
             <dd id="listenerState">Disconnected</dd>
           </div>
+          <div class="stat-tile">
+            <dt>Wi-Fi Signal</dt>
+            <dd id="wifiSignal">--</dd>
+          </div>
+          <div class="stat-tile">
+            <dt>Uptime</dt>
+            <dd id="uptimeState">--</dd>
+          </div>
+          <div class="stat-tile">
+            <dt>Reconnects</dt>
+            <dd id="reconnectState">0</dd>
+          </div>
+          <div class="stat-tile">
+            <dt>Device</dt>
+            <dd id="deviceName">Kitchen Monitor 1</dd>
+          </div>
+          <div class="stat-tile">
+            <dt>ESP Audio</dt>
+            <dd id="espAudioLevel">Idle</dd>
+          </div>
         </dl>
 
         <section class="control-grid" aria-label="Audio controls">
@@ -53,6 +73,7 @@
               <button id="micOnBtn" class="success-action" type="button" disabled>MIC ON</button>
               <button id="micOffBtn" class="danger-action" type="button" disabled>MIC OFF</button>
               <button id="listenBtn" class="listen-action" type="button" disabled>LISTEN LIVE</button>
+              <button id="restartBtn" class="danger-action" type="button" disabled>RESTART ESP</button>
             </div>
           </div>
 

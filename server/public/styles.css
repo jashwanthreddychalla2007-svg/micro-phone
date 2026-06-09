@@ -147,7 +147,7 @@ h1 {
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
   margin: 0;
 }
@@ -168,7 +168,7 @@ dt {
 dd {
   margin: 12px 0 0;
   color: var(--ink);
-  font-size: clamp(24px, 4vw, 34px);
+  font-size: clamp(19px, 3vw, 30px);
   font-weight: 900;
   line-height: 1;
   overflow-wrap: anywhere;
@@ -267,7 +267,7 @@ input:focus {
 
 .actions {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
   margin-top: 16px;
 }

@@ -8,9 +8,15 @@ const connectBtn = document.getElementById("connectBtn");
 const micOnBtn = document.getElementById("micOnBtn");
 const micOffBtn = document.getElementById("micOffBtn");
 const listenBtn = document.getElementById("listenBtn");
+const restartBtn = document.getElementById("restartBtn");
 const message = document.getElementById("message");
 const levelText = document.getElementById("levelText");
 const meterBars = [...document.querySelectorAll(".bar")];
+const wifiSignal = document.getElementById("wifiSignal");
+const uptimeState = document.getElementById("uptimeState");
+const reconnectState = document.getElementById("reconnectState");
+const deviceName = document.getElementById("deviceName");
+const espAudioLevel = document.getElementById("espAudioLevel");
 
 let socket;
 let audioContext;
@@ -26,6 +32,7 @@ function setConnectedControls(enabled) {
   micOnBtn.disabled = !enabled;
   micOffBtn.disabled = !enabled;
   listenBtn.disabled = !enabled;
+  restartBtn.disabled = !enabled;
 }
 
 function setDeviceClass(online) {
@@ -47,9 +54,44 @@ function renderStatus(status) {
   statusPill.innerHTML = `<span class="status-dot"></span>${status.online ? "ONLINE" : "OFFLINE"}`;
   statusPill.className = `pill ${status.online ? "online" : "offline"}`;
   micState.textContent = status.micOn ? "ON" : "OFF";
+  renderDeviceInfo(status.deviceInfo || {});
   setDeviceClass(status.online);
   lastSeenAt = status.lastSeenAt || 0;
   renderLastSeen();
+}
+
+function signalLabel(rssi) {
+  if (typeof rssi !== "number") return "--";
+  if (rssi >= -55) return `Excellent (${rssi})`;
+  if (rssi >= -67) return `Good (${rssi})`;
+  if (rssi >= -75) return `Fair (${rssi})`;
+  return `Weak (${rssi})`;
+}
+
+function uptimeLabel(ms) {
+  if (!ms) return "--";
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  if (minutes > 0) return `${minutes}m ${seconds}s`;
+  return `${seconds}s`;
+}
+
+function espAudioLabel(level) {
+  if (!level) return "Idle";
+  if (level < 700) return "Quiet";
+  if (level < 5000) return "Live";
+  return "Loud";
+}
+
+function renderDeviceInfo(info) {
+  wifiSignal.textContent = signalLabel(info.rssi);
+  uptimeState.textContent = uptimeLabel(info.uptimeMs);
+  reconnectState.textContent = String(info.reconnects || 0);
+  deviceName.textContent = info.deviceName || "Kitchen Monitor 1";
+  espAudioLevel.textContent = espAudioLabel(info.audioLevel);
 }
 
 function renderLastSeen() {
@@ -200,6 +242,13 @@ micOnBtn.addEventListener("click", () => {
 
 micOffBtn.addEventListener("click", () => {
   send({ type: "mic", enabled: false });
+});
+
+restartBtn.addEventListener("click", () => {
+  if (confirm("Restart ESP32 device?")) {
+    send({ type: "restart" });
+    setMessage("Restart command sent to ESP32.");
+  }
 });
 
 listenBtn.addEventListener("click", async () => {

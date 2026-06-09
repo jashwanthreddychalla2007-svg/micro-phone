@@ -12,6 +12,13 @@ const PUBLIC_DIR = path.join(__dirname, "public");
 let deviceSocket = null;
 let micOn = false;
 let lastSeenAt = 0;
+let deviceInfo = {
+  deviceName: "Kitchen Monitor 1",
+  rssi: null,
+  uptimeMs: 0,
+  reconnects: 0,
+  audioLevel: 0
+};
 const dashboards = new Set();
 
 function serveStatic(request, response) {
@@ -92,6 +99,7 @@ function getDeviceStatus() {
     online: Boolean(deviceSocket && !deviceSocket.destroyed && Date.now() - lastSeenAt < OFFLINE_AFTER_MS),
     micOn,
     lastSeenAt,
+    deviceInfo,
     serverTime: Date.now()
   };
 }
@@ -209,6 +217,13 @@ function handleDevice(socket) {
           const data = JSON.parse(payload.toString("utf8"));
           if (data.type === "heartbeat" && typeof data.micOn === "boolean") {
             micOn = data.micOn;
+            deviceInfo = {
+              deviceName: typeof data.deviceName === "string" ? data.deviceName : deviceInfo.deviceName,
+              rssi: typeof data.rssi === "number" ? data.rssi : deviceInfo.rssi,
+              uptimeMs: typeof data.uptimeMs === "number" ? data.uptimeMs : deviceInfo.uptimeMs,
+              reconnects: typeof data.reconnects === "number" ? data.reconnects : deviceInfo.reconnects,
+              audioLevel: typeof data.audioLevel === "number" ? data.audioLevel : deviceInfo.audioLevel
+            };
           }
           broadcastStatus();
         } catch {
@@ -271,6 +286,13 @@ function handleDashboard(socket) {
         if (data.type === "blink") {
           if (deviceSocket && !deviceSocket.destroyed) {
             sendText(deviceSocket, { type: "blink" });
+          }
+          return;
+        }
+
+        if (data.type === "restart") {
+          if (deviceSocket && !deviceSocket.destroyed) {
+            sendText(deviceSocket, { type: "restart" });
           }
           return;
         }
