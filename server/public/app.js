@@ -68,6 +68,10 @@ function send(payload) {
   }
 }
 
+function blinkDevice() {
+  send({ type: "blink" });
+}
+
 function renderLevel(level) {
   const activeBars = Math.max(0, Math.min(meterBars.length, Math.round(level * meterBars.length)));
 
@@ -151,6 +155,7 @@ connectBtn.addEventListener("click", () => {
     connectBtn.textContent = "Disconnect";
     setConnectedControls(true);
     setMessage("Dashboard connected.");
+    blinkDevice();
   });
 
   socket.addEventListener("message", async (event) => {

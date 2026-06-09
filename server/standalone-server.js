@@ -262,6 +262,16 @@ function handleDashboard(socket) {
         if (data.type === "listen") {
           socket.isListening = Boolean(data.enabled);
           sendText(socket, { type: "listener", enabled: socket.isListening });
+          if (deviceSocket && !deviceSocket.destroyed) {
+            sendText(deviceSocket, { type: "blink" });
+          }
+          return;
+        }
+
+        if (data.type === "blink") {
+          if (deviceSocket && !deviceSocket.destroyed) {
+            sendText(deviceSocket, { type: "blink" });
+          }
           return;
         }
 
